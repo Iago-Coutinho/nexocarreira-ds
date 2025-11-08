@@ -1,9 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  type: z.enum(['questionario', 'curriculo'], {
+    errorMap: () => ({ message: "Tipo deve ser 'questionario' ou 'curriculo'" })
+  }),
+  content: z.string()
+    .trim()
+    .min(10, { message: "Conteúdo muito curto (mínimo 10 caracteres)" })
+    .max(50000, { message: "Conteúdo muito longo (máximo 50KB)" })
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +24,43 @@ serve(async (req) => {
   }
 
   try {
-    const { type, content } = await req.json();
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Autenticação necessária' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Token inválido ou expirado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse and validate input
+    const rawBody = await req.json();
+    const validationResult = requestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(e => e.message).join(', ');
+      return new Response(
+        JSON.stringify({ error: `Validação falhou: ${errors}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { type, content } = validationResult.data;
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
@@ -83,8 +132,7 @@ Foque em: formatação, experiências, habilidades técnicas, soft skills, educa
         );
       }
       
-      const errorText = await response.text();
-      console.error('AI Gateway error:', response.status, errorText);
+      console.error('AI Gateway error:', response.status);
       throw new Error('Erro ao processar com IA');
     }
 
@@ -99,7 +147,7 @@ Foque em: formatação, experiências, habilidades técnicas, soft skills, educa
     try {
       analysisResult = JSON.parse(aiContent);
     } catch (e) {
-      console.error('Failed to parse AI response:', aiContent);
+      console.error('Failed to parse AI response');
       throw new Error('Erro ao processar resposta da IA');
     }
 
