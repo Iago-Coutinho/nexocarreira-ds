@@ -74,22 +74,14 @@ export default function Overview() {
             <h2 className="text-2xl font-bold mb-2">Bem-vindo ao NexoCarreira!</h2>
             <p className="text-muted-foreground mb-4">
               Estou aqui para te ajudar a descobrir seus pontos fortes e te preparar para conquistar o primeiro emprego. 
-              Comece respondendo o questionário ou fazendo upload do seu currículo.
+              Comece respondendo o questionário para receber uma análise personalizada.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="hero">
-                <Link to="/dashboard/questionnaire">
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  Iniciar Questionário
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard/upload">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Upload de Currículo
-                </Link>
-              </Button>
-            </div>
+            <Button asChild variant="hero">
+              <Link to="/dashboard/questionnaire">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Iniciar Questionário
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -181,14 +173,9 @@ export default function Overview() {
               <div className="text-muted-foreground mb-4">
                 Você ainda não tem avaliações. Comece agora!
               </div>
-              <div className="flex gap-3 justify-center">
-                <Button asChild variant="default">
-                  <Link to="/dashboard/questionnaire">Iniciar Questionário</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/dashboard/upload">Upload de Currículo</Link>
-                </Button>
-              </div>
+              <Button asChild variant="default">
+                <Link to="/dashboard/questionnaire">Iniciar Questionário</Link>
+              </Button>
             </div>
           )}
         </CardContent>
