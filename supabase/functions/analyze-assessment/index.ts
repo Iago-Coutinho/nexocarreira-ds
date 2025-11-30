@@ -9,8 +9,8 @@ const corsHeaders = {
 
 // Input validation schema
 const requestSchema = z.object({
-  type: z.enum(['questionario', 'curriculo'], {
-    errorMap: () => ({ message: "Tipo deve ser 'questionario' ou 'curriculo'" })
+  type: z.literal('questionario', {
+    errorMap: () => ({ message: "Tipo deve ser 'questionario'" })
   }),
   content: z.string()
     .trim()
@@ -67,11 +67,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    let systemPrompt = '';
-    let userPrompt = '';
-
-    if (type === 'questionario') {
-      systemPrompt = `Você é Nexo, um mentor de carreira especializado em preparar universitários e recém-formados para o primeiro emprego. Sua comunicação é formal mas levemente descontraída e sempre motivacional, reforçando a autoconfiança.
+    const systemPrompt = `Você é Nexo, um mentor de carreira especializado em preparar universitários e recém-formados para o primeiro emprego. Sua comunicação é formal mas levemente descontraída e sempre motivacional, reforçando a autoconfiança.
 
 Analise as respostas do questionário e retorne um JSON estruturado com:
 - pontos_fortes: array com 3-5 competências bem desenvolvidas (técnicas e comportamentais)
@@ -83,24 +79,7 @@ Analise as respostas do questionário e retorne um JSON estruturado com:
 
 Seja específico, construtivo e sempre termine com reforço positivo.`;
 
-      userPrompt = `Analise estas respostas do questionário:\n\n${content}`;
-    } else if (type === 'curriculo') {
-      systemPrompt = `Você é Nexo, um mentor de carreira especializado em análise de currículos para primeiro emprego. Seja formal mas acolhedor.
-
-Analise o currículo e retorne um JSON estruturado com:
-- pontos_fortes: array com elementos positivos do currículo
-- pontos_a_melhorar: array com sugestões de melhoria
-- recomendacoes: array com ações práticas para fortalecer o currículo
-- nivel: "iniciante", "intermediario" ou "pronto"
-- score: número de 0 a 100
-- mensagem_motivacional: feedback personalizado
-
-Foque em: formatação, experiências, habilidades técnicas, soft skills, educação.`;
-
-      userPrompt = `Analise este currículo:\n\n${content}`;
-    } else {
-      throw new Error('Tipo de análise inválido');
-    }
+    const userPrompt = `Analise estas respostas do questionário:\n\n${content}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
